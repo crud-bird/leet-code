@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-//lettcode第1036题，逃离大迷宫
+//1036.逃离大迷宫
 func isEscapePossible(blocked [][]int, source []int, target []int) bool {
 	//只检查sourece到target会存在target被包围的情况
 	return walk(blocked, source, target) && walk(blocked, target, source)
