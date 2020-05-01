@@ -7,7 +7,7 @@ func NumberClassiy(param []int32) int {
 	m := make(map[int32]int)
 	for i := 2; i < len(param); i++ {
 		a := param[i]
-		d := (a&0xff + (a>>8)&0xff + (a>>16)&0xff + (a>>24)&0xff) / b
+		d := (a&0xff + (a>>8)&0xff + (a>>16)&0xff + (a>>24)&0xff) % b
 		if d < c {
 			m[d]++
 		}

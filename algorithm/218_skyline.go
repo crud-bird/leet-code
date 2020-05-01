@@ -1,118 +1,98 @@
 package algorithm
 
-//GetSkyline ...
 func GetSkyline(buildings [][]int) [][]int {
 	if len(buildings) == 0 {
 		return [][]int{}
 	}
 
-	res := make([][]int, 2*len(buildings))
+	points := make([][]int, 2*len(buildings))
 	for i := 0; i < len(buildings); i++ {
-		res[2*i] = []int{buildings[i][0], buildings[i][2], 0}
-		res[2*i+1] = []int{buildings[i][1], buildings[i][2], 1}
+		points[2*i] = []int{buildings[i][0], buildings[i][2], 0}
+		points[2*i+1] = []int{buildings[i][1], buildings[i][2], 1}
 	}
-	for i := 0; i < len(res); i++ {
-		for j := 0; j < len(res)-i-1; j++ {
-			if res[j][0] > res[j+1][0] {
-				res[j], res[j+1] = res[j+1], res[j]
+	for i := 0; i < len(points); i++ {
+		for j := 0; j < len(points)-i-1; j++ {
+			if points[j][0] > points[j+1][0] {
+				points[j], points[j+1] = points[j+1], points[j]
 			}
 		}
 	}
 
-	left := make([][]int, 0)
-	valid := make([][]int, 0)
-	cur := res[0]
-	left = append(left, cur)
-	for i := 1; i < len(res); i++ {
-		next := res[i]
-		if cur[2] == 0 {
-			//左坐标点
-			if next[2] == 0 {
-				left = append(left, next)
-				if cur[1] <= next[1] {
-					valid = append(valid, cur)
-					cur = next
-				}
-			} else {
-				if cur[1] == next[1] {
-					valid = append(valid, cur)
-					cur = next
-				}
-				subLeft(&left, next[1])
+	height := []int{0}
+	res := [][]int{}
+	for i := 0; i < len(points); i++ {
+		if points[i][2] == 0 {
+			if points[i][1] > top(&height) {
+				res = append(res, []int{points[i][0], points[i][1]})
 			}
+			height = add(&height, points[i][1])
 		} else {
-			if next[2] == 1 {
-				if cur[1] == next[1] {
-					cur = next
-				} else {
-					top := topLeft(&left)
-					cur = []int{cur[0], top, 0}
-					if top == next[1] {
-						valid = append(valid, cur)
-						cur = next
-					}
-				}
-				subLeft(&left, next[1])
-			} else {
-				left = append(left, next)
-				valid = append(valid, []int{cur[0], 0, 0})
-				cur = next
+			t := top(&height)
+			sub(&height, points[i][1])
+			if t != top(&height) {
+				res = append(res, []int{points[i][0], top(&height)})
 			}
 		}
 	}
-	//最后一点
-	valid = append(valid, []int{res[len(res)-1][0], 0, 0})
 
-	valid2 := make([][]int, 0)
-	for i := 0; i < len(valid)-1; i++ {
-		if valid[i][0] == valid[i+1][0] {
-			//同横坐标
-			if valid[i+1][1] < valid[i][1] {
-				valid[i+1][1] = valid[i][1]
+	//合并横坐标相同的点
+	valid := [][]int{res[0]}
+	for i, j := 1, 0; i < len(res); i++ {
+		if valid[j][0] == res[i][0] {
+			if (i == len(res)-1 && valid[j][1] > res[i][1]) || (i < len(res)-1 && valid[j][1] < res[i][1]) {
+				valid[j] = res[i]
 			}
 			continue
 		}
-		valid2 = append(valid2, valid[i][0:2])
+		valid = append(valid, res[i])
+		j++
 	}
-	//最后一个
-	valid2 = append(valid2, valid[len(valid)-1][0:2])
 
-	valid = valid2
-	valid2 = valid2[:0]
-	for i := 0; i < len(valid)-1; i++ {
-		if valid[i][1] == valid[i+1][1] {
-			//同高
-			valid[i+1][0] = valid[i][0]
+	//合并相邻的相同高度的点
+	res = valid
+	valid = [][]int{res[0]}
+	for i, j := 1, 0; i < len(res); i++ {
+		if valid[j][1] == res[i][1] {
 			continue
 		}
-		valid2 = append(valid2, valid[i][0:2])
+		valid = append(valid, res[i])
+		j++
 	}
-	v := valid[len(valid)-1][0:2]
-	v[1] = 0
-	valid2 = append(valid2, v)
 
-	return valid2
+	return valid
 }
 
-func subLeft(left *[][]int, h int) {
-	for i := 0; i < len(*left); i++ {
-		if (*left)[i][1] == h {
-			if i+1 == len(*left) {
-				(*left) = (*left)[0:i]
+func sub(s *[]int, h int) {
+	for i := len(*s) - 1; i >= 0; i-- {
+		if (*s)[i] == h {
+			if i == len(*s)-1 {
+				*s = (*s)[:i]
 			} else {
-				(*left) = append((*left)[0:i], (*left)[i+1:]...)
+				*s = append((*s)[:i], (*s)[i+1:]...)
 			}
 			return
 		}
 	}
 }
 
-func topLeft(left *[][]int) int {
-	max := 0
-	for _, l := range *left {
-		if l[1] > max {
-			max = l[1]
+func top(s *[]int) int {
+	return (*s)[len(*s)-1]
+}
+
+func add(s *[]int, e int) []int {
+	var i int
+	for i = 0; i < len(*s); i++ {
+		if e < (*s)[i] {
+			break
 		}
 	}
-	return max
+	if i == len(*s) {
+		*s = append(*s, e)
+		return *s
+	}
+	res := make([]int, 0, len(*s)+1)
+	res = append(res, (*s)[:i]...)
+	res = append(res, e)
+	res = append(res, (*s)[i:]...)
+	return res
 }
